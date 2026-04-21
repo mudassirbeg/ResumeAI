@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResumeAI — Analyzer & Job Matcher</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#f6f8fa;--bg2:#ffffff;--bg3:#f0f3f6;--bg4:#e2e8f0;
+    --accent:#6366f1;--accent2:#8b5cf6;--accent3:#0ea5e9;
+    --green:#10b981;--amber:#f59e0b;--red:#ef4444;
+    --text:#0f172a;--text2:#475569;--text3:#64748b;
+    --border:#e2e8f0;--border2:#cbd5e1;
+    --card:#ffffff;--card2:#f8fafc;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  
+  /* Header */
+  .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+  .logo{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer}
+  .logo span{font-weight:400}
+  .nav-tabs{display:flex;gap:4px}
+  .nav-tab{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s}
+  .nav-tab.active{background:var(--bg4);color:var(--text)}
+  .nav-tab:hover{background:var(--bg3)}
+  .user-badge{display:flex;align-items:center;gap:10px;padding:6px 14px;background:var(--bg4);border-radius:100px;font-size:13px;color:var(--text2);cursor:pointer}
+  .user-dot{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .pass-wrap{position:relative;display:flex;align-items:center}
+  .pass-eye{position:absolute;right:14px;cursor:pointer;font-size:16px;color:var(--text2);user-select:none}
+  .landing-wrap{min-height:calc(100vh - 64px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem}
+  .landing-title{font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;margin-bottom:1rem;color:var(--text);line-height:1.1}
+  .landing-sub{font-size:1.2rem;color:var(--text2);max-width:600px;margin-bottom:2.5rem}
+  
+  .user-badge{display:flex;align-items:center;gap:10px;padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--text);font-weight:500;}
+  .logout-btn{color:var(--red);font-weight:600;font-size:12px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .2s}
+  .logout-btn:hover{background:rgba(239, 68, 68, 0.1)}
+  /* Pages */
+  .page{display:none;padding:2rem;max-width:1200px;margin:0 auto;animation:fadeIn .3s ease}
+  .page.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Auth page */
+  .auth-wrap{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:2rem}
+  .auth-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:420px}
+  .auth-title{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:700;margin-bottom:8px}
+  .auth-sub{color:var(--text2);font-size:14px;margin-bottom:2rem}
+  .field{margin-bottom:1rem}
+  .field label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500}
+  .field input{width:100%;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border .2s}
+  .field input:focus{border-color:var(--accent)}
+  .btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border:none;border-radius:10px;color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:8px}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(108,99,255,.4)}
+  .btn-primary:disabled{opacity:.6;transform:none;cursor:not-allowed}
+  .auth-toggle{text-align:center;margin-top:1rem;font-size:13px;color:var(--text2)}
+  .auth-toggle a{color:var(--accent2);cursor:pointer;text-decoration:none}
+
+  /* Upload zone */
+  .section-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;margin-bottom:6px}
+  .section-sub{color:var(--text2);font-size:14px;margin-bottom:2rem}
+  .upload-zone{border:2px dashed var(--border2);border-radius:16px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--card);position:relative}
+  .upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(108,99,255,.05)}
+  .upload-icon{font-size:3rem;margin-bottom:1rem}
+  .upload-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:600;margin-bottom:6px}
+  .upload-hint{color:var(--text2);font-size:13px}
+  .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .file-chosen{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-top:1rem}
+  .file-icon{font-size:1.5rem}
+  .file-name{font-size:14px;font-weight:500;flex:1}
+  .file-size{font-size:12px;color:var(--text2)}
+
+  /* Job roles selection */
+  .roles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:2rem}
+  .role-chip{padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s;font-size:14px;font-weight:500}
+  .role-chip:hover{border-color:var(--border2)}
+  .role-chip.selected{border-color:var(--accent);background:rgba(108,99,255,.12);color:var(--accent2)}
+  .role-chip .role-icon{font-size:1.2rem;margin-bottom:4px;display:block}
+
+  /* Analyze button */
+  .analyze-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 32px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border:none;border-radius:12px;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s}
+  .analyze-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 40px rgba(108,99,255,.4)}
+  .analyze-btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Loading */
+  .loading-state{text-align:center;padding:4rem 2rem}
+  .spinner{width:56px;height:56px;border:3px solid var(--border2);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.5rem}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:600;margin-bottom:8px}
+  .loading-sub{color:var(--text2);font-size:13px}
+  .pulse-dots{display:flex;justify-content:center;gap:6px;margin-top:1rem}
+  .pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+  .pulse-dot:nth-child(2){animation-delay:.2s}
+  .pulse-dot:nth-child(3){animation-delay:.4s}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+  /* Results */
+  .results-header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap}
+  .score-badge{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100px;height:100px;border-radius:50%;background:conic-gradient(var(--green) 0% var(--score-pct,0%),var(--bg4) var(--score-pct,0%) 100%);position:relative}
+  .score-inner{position:absolute;inset:8px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .score-num{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800}
+  .score-label{font-size:10px;color:var(--text2);font-weight:500}
+  .results-meta{flex:1}
+  .results-title{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:4px}
+  .results-sub{color:var(--text2);font-size:14px}
+  .retry-btn{padding:10px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s}
+  .retry-btn:hover{border-color:var(--border2);color:var(--text)}
+
+  /* Cards grid */
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.25rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem}
+  .card-header{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem}
+  .card-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+  .card-icon.blue{background:rgba(56,189,248,.15)}
+  .card-icon.green{background:rgba(34,211,165,.15)}
+  .card-icon.amber{background:rgba(251,191,36,.15)}
+  .card-icon.red{background:rgba(248,113,113,.15)}
+  .card-icon.purple{background:rgba(108,99,255,.15)}
+  .card-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+  .card-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+  /* Skill tags */
+  .skill-tags{display:flex;flex-wrap:wrap;gap:8px}
+  .skill-tag{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500}
+  .skill-tag.present{background:rgba(34,211,165,.15);color:var(--green);border:1px solid rgba(34,211,165,.2)}
+  .skill-tag.missing{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+  .skill-tag.suggested{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+
+  /* Job match cards */
+  .job-cards{display:flex;flex-direction:column;gap:10px}
+  .job-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:all .2s}
+  .job-card:hover{border-color:var(--border2)}
+  .job-role-name{font-size:14px;font-weight:600;flex:1}
+  .job-company{font-size:12px;color:var(--text2);margin-top:2px}
+  .match-bar-wrap{width:120px}
+  .match-bar-label{font-size:11px;color:var(--text2);margin-bottom:4px;display:flex;justify-content:space-between}
+  .match-bar{height:6px;background:var(--bg4);border-radius:100px;overflow:hidden}
+  .match-fill{height:100%;border-radius:100px;transition:width .8s ease}
+  .match-pct{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;min-width:44px;text-align:right}
+
+  /* Improvements */
+  .improvement-list{display:flex;flex-direction:column;gap:10px}
+  .improvement-item{display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--bg3);border-radius:10px;border-left:3px solid var(--accent)}
+  .improvement-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .improvement-text{font-size:13px;line-height:1.6;color:var(--text)}
+
+  /* Stats row */
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+  .stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center}
+  .stat-num{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800}
+  .stat-lbl{font-size:12px;color:var(--text2);margin-top:2px}
+
+  /* Footer */
+  .footer{text-align:center;padding:2rem;font-size:12px;color:var(--text3);border-top:1px solid var(--border);margin-top:3rem}
+  .footer strong{color:var(--accent2)}
+
+  /* Toasts */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;font-size:14px;z-index:9999;animation:slideUp .3s ease;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+  .ats-bar-wrap{margin:1rem 0}
+  .ats-bar-bg{height:14px;background:var(--bg4);border-radius:100px;overflow:hidden;margin-top:6px}
+  .ats-bar-fill{height:100%;border-radius:100px;transition:width 1.2s cubic-bezier(.23,1,.32,1);position:relative}
+  .ats-bar-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:rgba(255,255,255,.5);border-radius:100px}
+
+  .divider{height:1px;background:var(--border);margin:1.5rem 0}
+
+  @media(max-width:600px){
+    .header{padding:0 1rem}
+    .page{padding:1rem}
+    .cards-grid{grid-template-columns:1fr}
+    .stats-row{grid-template-columns:1fr}
+    .nav-tabs{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo" onclick="goHome()">Resume<span>AI</span></div>
+  <div class="nav-tabs" id="navTabs" style="display:none">
+    <button class="nav-tab active" onclick="showPage('upload')">Analyze</button>
+    <button class="nav-tab" onclick="showPage('history')">History</button>
+  </div>
+  <div id="userBadge" style="display:none" class="user-badge">
+    <div class="user-dot" id="userInitials">U</div>
+    <span id="userName">User</span>
+    <span class="logout-btn" onclick="logout()">Log out</span>
+  </div>
+</header>
+
+<!-- LANDING PAGE -->
+<div id="landingPage" class="page active">
+  <div class="landing-wrap">
+    <div class="landing-title">Score your resume<br>and match with jobs.</div>
+    <div class="landing-sub">Get an AI-powered ATS score, tailored skill recommendations, and professional feedback with Anime character reactions.</div>
+    <button class="btn-primary" style="max-width:240px;padding:16px 32px;font-size:16px" onclick="showPage('auth')">Get Started</button>
+  </div>
+</div>
+
+<!-- AUTH PAGE -->
+<div id="authPage" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-title" id="authTitle">Welcome back</div>
+      <div class="auth-sub" id="authSub">Sign in to analyze your resume with AI</div>
+      <div id="nameField" class="field" style="display:none">
+        <label>Full name</label>
+        <input type="text" id="fullName" placeholder="Mudassir Beg">
+      </div>
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" value="demo@resumeai.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="authPassword" placeholder="••••••••" value="demo123">
+          <span class="pass-eye" onclick="togglePassword()">👁️</span>
+        </div>
+      </div>
+      <button class="btn-primary" id="authBtn" onclick="handleAuth()">Sign in</button>
+      <div style="text-align:center;margin-top:12px">
+        <a href="#" onclick="showPage('landing')" style="font-size:13px;color:var(--text2);text-decoration:none">← Return to Index</a>
+      </div>
+      <div class="auth-toggle" id="authToggle">
+        Don't have an account? <a onclick="toggleAuth()">Create one</a>
+      </div>
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);font-size:12px;color:var(--text3);text-align:center">
+        Try demo: <strong style="color:var(--text2)">demo@resumeai.com</strong> / <strong style="color:var(--text2)">demo123</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD PAGE -->
+<div id="uploadPage" class="page">
+  <div class="section-title">Analyze Your Resume</div>
+  <div class="section-sub">Upload your PDF resume and let AI extract your skills and match you with jobs</div>
+
+  <div class="upload-zone" id="uploadZone" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
+    <input type="file" accept=".pdf,.txt" onchange="onFileSelect(event)" id="fileInput">
+    <div class="upload-icon">📄</div>
+    <div class="upload-title">Drop your resume here</div>
+    <div class="upload-hint">PDF or TXT • Max 10MB</div>
+  </div>
+
+  <div class="file-chosen" id="fileChosen" style="display:none">
+    <div class="file-icon">📋</div>
+    <div style="flex:1">
+      <div class="file-name" id="fileName">resume.pdf</div>
+      <div class="file-size" id="fileSize">0 KB</div>
+    </div>
+    <span style="cursor:pointer;color:var(--text3);font-size:18px" onclick="clearFile()">✕</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div style="margin-bottom:1rem">
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px">Target Job Roles</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1rem">Select all that interest you</div>
+    <div class="roles-grid" id="rolesGrid"></div>
+  </div>
+
+  <div style="margin-bottom:1rem">
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px">Or describe your resume</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Paste your resume text or describe your experience</div>
+    <textarea id="resumeText" placeholder="Paste your resume here or describe your skills, experience, and background..." style="width:100%;min-height:140px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;resize:vertical;outline:none;line-height:1.6" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">
+    <span>✦</span> Analyze with AI
+  </button>
+</div>
+
+<!-- RESULTS PAGE -->
+<div id="resultsPage" class="page">
+  <div id="loadingState" class="loading-state">
+    <div class="spinner"></div>
+    <div class="loading-text">AI is analyzing your resume...</div>
+    <div class="loading-sub">Extracting skills, scoring ATS compatibility, matching jobs</div>
+    <div class="pulse-dots">
+      <div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div>
+    </div>
+  </div>
+  <div id="resultsContent" style="display:none"></div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="historyPage" class="page">
+  <div class="section-title">Analysis History</div>
+  <div class="section-sub">Your previous resume analyses</div>
+  <div id="historyList"></div>
+</div>
+
+<div class="footer">
+  Built with ✦ by <strong>Mudassir Beg</strong> &nbsp;·&nbsp; ResumeAI — Powered by Claude AI
+</div>
+
+<script>
+const ROLES=[
+  {icon:'💻',name:'Software Engineer',tags:['Python','JavaScript','Algorithms']},
+  {icon:'🤖',name:'ML Engineer',tags:['TensorFlow','PyTorch','Python']},
+  {icon:'📊',name:'Data Scientist',tags:['R','SQL','Statistics']},
+  {icon:'☁️',name:'DevOps Engineer',tags:['Docker','AWS','CI/CD']},
+  {icon:'🎨',name:'Frontend Dev',tags:['React','CSS','TypeScript']},
+  {icon:'🔒',name:'Cybersecurity',tags:['Networking','Pen Testing','SIEM']},
+  {icon:'📱',name:'Mobile Dev',tags:['Swift','Kotlin','Flutter']},
+  {icon:'🏗️',name:'Backend Dev',tags:['Node.js','APIs','Databases']},
+  {icon:'📈',name:'Product Manager',tags:['Roadmap','Agile','Analytics']},
+  {icon:'🧬',name:'Bioinformatics',tags:['Genomics','Python','R']},
+  {icon:'💰',name:'Data Analyst',tags:['SQL','Power BI','Excel']},
+  {icon:'🌐',name:'Full Stack Dev',tags:['React','Node.js','MongoDB']}
+];
+
+let authMode='login',currentUser=null,selectedRoles=[],uploadedFile=null,analysisHistory=[];
+
+function init(){
+  renderRoles();
+  const saved=localStorage.getItem('resumeai_user');
+  if(saved){currentUser=JSON.parse(saved);onLogin();}
+}
+
+function goHome(){
+  if(currentUser) showPage('upload');
+  else showPage('landing');
+}
+
+function togglePassword(){
+  const inp = document.getElementById('authPassword');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function renderRoles(){
+  const g=document.getElementById('rolesGrid');
+  g.innerHTML=ROLES.map((r,i)=>`
+    <div class="role-chip" id="role${i}" onclick="toggleRole(${i})">
+      <span class="role-icon">${r.icon}</span>
+      ${r.name}
+    </div>
+  `).join('');
+}
+
+function toggleRole(i){
+  const el=document.getElementById('role'+i);
+  const idx=selectedRoles.indexOf(i);
+  if(idx>-1){selectedRoles.splice(idx,1);el.classList.remove('selected');}
+  else{selectedRoles.push(i);el.classList.add('selected');}
+}
+
+function toggleAuth(){
+  authMode=authMode==='login'?'signup':'login';
+  const isSign=authMode==='signup';
+  document.getElementById('authTitle').textContent=isSign?'Create account':'Welcome back';
+  document.getElementById('authSub').textContent=isSign?'Start your AI resume journey':'Sign in to analyze your resume';
+  document.getElementById('authBtn').textContent=isSign?'Create account':'Sign in';
+  document.getElementById('nameField').style.display=isSign?'block':'none';
+  document.getElementById('authToggle').innerHTML=isSign?'Already have an account? <a onclick="toggleAuth()">Sign in</a>':'Don\'t have an account? <a onclick="toggleAuth()">Create one</a>';
+}
+
+async function handleAuth(){
+  const email=document.getElementById('authEmail').value.trim();
+  const pass=document.getElementById('authPassword').value;
+  if(!email||!pass){toast('⚠️ Please fill all fields');return;}
+  
+  const endpoint = authMode === 'signup' ? '/signup' : '/login';
+  const name = document.getElementById('fullName').value.trim() || 'User';
+  
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password: pass })
+    });
+    const data = await res.json();
+    if(res.ok && data.success) {
+      currentUser={email: data.user.email, name: data.user.name, id:Date.now()};
+      localStorage.setItem('resumeai_user',JSON.stringify(currentUser));
+      onLogin();
+      toast('👋 Welcome, '+currentUser.name.split(' ')[0]+'!');
+    } else {
+      toast('⚠️ ' + (data.message || 'Error occurred'));
+    }
+  } catch(e) {
+    toast('⚠️ Connection error');
+  }
+}
+
+function onLogin(){
+  document.getElementById('authPage').classList.remove('active');
+  document.getElementById('uploadPage').classList.add('active');
+  document.getElementById('navTabs').style.display='flex';
+  document.getElementById('userBadge').style.display='flex';
+  document.getElementById('userInitials').textContent=currentUser.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('userName').textContent=currentUser.name.split(' ')[0];
+  loadHistory();
+}
+
+function logout(){
+  localStorage.removeItem('resumeai_user');
+  currentUser=null;selectedRoles=[];uploadedFile=null;
+  document.getElementById('navTabs').style.display='none';
+  document.getElementById('userBadge').style.display='none';
+  showPage('landing');
+  toast('Signed out');
+}
+
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById(p+'Page').classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((el,i)=>{
+    const pages=['upload','history'];
+    el.classList.toggle('active',pages[i]===p);
+  });
+}
+
+function onDrag(e,over){e.preventDefault();document.getElementById('uploadZone').classList.toggle('drag',over);}
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);
+}
+function onFileSelect(e){if(e.target.files[0])setFile(e.target.files[0]);}
+function setFile(f){
+  uploadedFile=f;
+  document.getElementById('fileChosen').style.display='flex';
+  document.getElementById('fileName').textContent=f.name;
+  document.getElementById('fileSize').textContent=(f.size/1024).toFixed(1)+' KB';
+}
+function clearFile(){
+  uploadedFile=null;
+  document.getElementById('fileChosen').style.display='none';
+  document.getElementById('fileInput').value='';
+}
+
+async function startAnalysis(){
+  const text=document.getElementById('resumeText').value.trim();
+  const roles=selectedRoles.map(i=>ROLES[i].name);
+  if(!text&&!uploadedFile){toast('⚠️ Please upload a resume or paste your text');return;}
+  if(roles.length===0){toast('⚠️ Please select at least one target role');return;}
+
+  showPage('results');
+  document.getElementById('loadingState').style.display='block';
+  document.getElementById('resultsContent').style.display='none';
+
+  try{
+    const result=await callClaudeAPI(text, uploadedFile, roles);
+    renderResults(result,roles);
+    saveHistory(result,roles);
+  }catch(e){
+    document.getElementById('loadingState').innerHTML=`<div style="text-align:center;padding:3rem"><div style="font-size:3rem">⚠️</div><div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin:1rem 0">Analysis failed</div><div style="color:var(--text2);font-size:13px;margin-bottom:1.5rem">${e.message}</div><button class="retry-btn" onclick="showPage('upload')">← Try again</button></div>`;
+  }
+}
+
+async function callClaudeAPI(text, file, targetRoles){
+  const formData = new FormData();
+  if (text) formData.append('text', text);
+  if (file) formData.append('file', file);
+  formData.append('roles', JSON.stringify(targetRoles));
+
+  const resp=await fetch('/analyze',{
+    method:'POST',
+    body:formData
+  });
+  if(!resp.ok)throw new Error('API error '+resp.status);
+  const data=await resp.json();
+  return data;
+}
+
+function getScoreColor(s){
+  if(s>=75)return'var(--green)';
+  if(s>=50)return'var(--amber)';
+  return'var(--red)';
+}
+
+function renderResults(data,roles){
+  document.getElementById('loadingState').style.display='none';
+  const el=document.getElementById('resultsContent');
+  el.style.display='block';
+  const sc=data.atsScore;
+  const pct=sc+'%';
+  const col=getScoreColor(sc);
+  const bd=data.atsBreakdown||{formatting:70,keywords:65,experience:80,education:75};
+
+  const animeImg = sc >= 75 ? 'happy_anime.png' : 'sad_anime.png';
+
+  el.innerHTML=`
+    <div class="results-header" style="position:relative;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:1.5rem">
+        <div style="position:relative;width:100px;height:100px;flex-shrink:0">
+          <svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg)">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg4)" stroke-width="10"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="${col}" stroke-width="10"
+              stroke-dasharray="${2*Math.PI*42}" stroke-dashoffset="${2*Math.PI*42*(1-sc/100)}"
+              stroke-linecap="round" style="transition:stroke-dashoffset 1.2s ease"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <span style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:${col}">${sc}</span>
+            <span style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:1px">ATS</span>
+          </div>
+        </div>
+        <div class="results-meta">
+          <div class="results-title">${data.candidateName||'Your Resume'}</div>
+          <div class="results-sub" style="margin-bottom:8px">${data.summary||'Analysis complete'}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${roles.slice(0,3).map(r=>`<span class="skill-tag suggested">${r}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <img src="${animeImg}" style="width:100px;height:100px;object-fit:cover;border-radius:18px;border:1px solid var(--border);box-shadow:0 10px 25px rgba(0,0,0,0.05)" title="${sc >= 75 ? 'Great job!' : 'Needs improvement'}">
+        <button class="retry-btn" onclick="showPage('upload')">← New Analysis</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--green)">${(data.presentSkills||[]).length}</div>
+        <div class="stat-lbl">Skills found</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--red)">${(data.missingSkills||[]).length}</div>
+        <div class="stat-lbl">Skills missing</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--accent2)">${(data.jobMatches||[]).length}</div>
+        <div class="stat-lbl">Job matches</div>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <!-- ATS Breakdown -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon blue">📊</div>
+          <div>
+            <div class="card-title">ATS Score Breakdown</div>
+            <div class="card-sub">Applicant Tracking System compatibility</div>
+          </div>
+        </div>
+        ${Object.entries(bd).map(([k,v])=>`
+          <div class="ats-bar-wrap">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <span style="font-size:13px;text-transform:capitalize;color:var(--text2)">${k}</span>
+              <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:${getScoreColor(v)}">${v}%</span>
+            </div>
+            <div class="ats-bar-bg">
+              <div class="ats-bar-fill" style="width:${v}%;background:${getScoreColor(v)}"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Skills present -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">✅</div>
+          <div>
+            <div class="card-title">Skills Found</div>
+            <div class="card-sub">Detected in your resume</div>
+          </div>
+        </div>
+        <div class="skill-tags">
+          ${(data.presentSkills||[]).map(s=>`<span class="skill-tag present">${s}</span>`).join('')}
+        </div>
+      </div>
+
+      <!-- Missing skills -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon red">⚡</div>
+          <div>
+            <div class="card-title">Missing Skills</div>
+            <div class="card-sub">Add these to boost your ATS score</div>
+          </div>
+        </div>
+        <div class="skill-tags">
+          ${(data.missingSkills||[]).map(s=>`<span class="skill-tag missing">${s}</span>`).join('')}
+        </div>
+      </div>
+
+      <!-- Suggested skills -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon amber">💡</div>
+          <div>
+            <div class="card-title">Recommended Skills</div>
+            <div class="card-sub">Learn these to stand out</div>
+          </div>
+        </div>
+        <div class="skill-tags">
+          ${(data.suggestedSkills||[]).map(s=>`<span class="skill-tag suggested">${s}</span>`).join('')}
+        </div>
+      </div>
+
+      <!-- Job matches -->
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-header">
+          <div class="card-icon purple">🎯</div>
+          <div>
+            <div class="card-title">Job Role Matches</div>
+            <div class="card-sub">How well you match each target role</div>
+          </div>
+        </div>
+        <div class="job-cards">
+          ${(data.jobMatches||[]).sort((a,b)=>b.match-a.match).map(j=>`
+            <div class="job-card">
+              <div style="flex:1">
+                <div class="job-role-name">${j.role}</div>
+                <div class="job-company" style="color:var(--text3)">${j.level||'Mid-level'} • ${j.reason||''}</div>
+              </div>
+              <div class="match-bar-wrap">
+                <div class="match-bar">
+                  <div class="match-fill" style="width:${j.match}%;background:${getScoreColor(j.match)}"></div>
+                </div>
+              </div>
+              <div class="match-pct" style="color:${getScoreColor(j.match)}">${j.match}%</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Candidate Resume Content -->
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-header">
+          <div class="card-icon blue">📄</div>
+          <div>
+            <div class="card-title">Extracted Resume Content</div>
+            <div class="card-sub">Extracting directly from your uploaded ATS document</div>
+          </div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:monospace;font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:220px;overflow-y:auto;line-height:1.6">
+${(data.extractedText || 'No text extracted.').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        </div>
+      </div>
+
+      <!-- Improvements -->
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-header">
+          <div class="card-icon blue">🚀</div>
+          <div>
+            <div class="card-title">Suggested Improvements</div>
+            <div class="card-sub">AI-powered recommendations to boost your resume</div>
+          </div>
+        </div>
+        <div class="improvement-list">
+          ${(data.improvements||[]).map((imp,i)=>`
+            <div class="improvement-item">
+              <div class="improvement-num">${i+1}</div>
+              <div class="improvement-text">${imp}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveHistory(data,roles){
+  const entry={id:Date.now(),date:new Date().toLocaleDateString(),atsScore:data.atsScore,roles,candidateName:data.candidateName};
+  analysisHistory.unshift(entry);
+  localStorage.setItem('resumeai_history',JSON.stringify(analysisHistory));
+}
+
+function loadHistory(){
+  const saved=localStorage.getItem('resumeai_history');
+  if(saved)analysisHistory=JSON.parse(saved);
+  renderHistory();
+}
+
+function renderHistory(){
+  const el=document.getElementById('historyList');
+  if(!analysisHistory.length){
+    el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text3)">No analyses yet. Upload your first resume!</div>';
+    return;
+  }
+  el.innerHTML=analysisHistory.map(h=>`
+    <div class="job-card" style="margin-bottom:10px">
+      <div style="flex:1">
+        <div class="job-role-name">${h.candidateName||'Resume Analysis'}</div>
+        <div class="job-company">${h.date} • ${h.roles.slice(0,2).join(', ')}</div>
+      </div>
+      <div class="match-pct" style="color:${getScoreColor(h.atsScore)}">${h.atsScore}</div>
+      <div style="font-size:11px;color:var(--text3)">ATS</div>
+    </div>
+  `).join('');
+}
+
+function toast(msg){
+  const t=document.createElement('div');
+  t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+init();
+</script>
+</body>
+</html>
