@@ -103,32 +103,63 @@ def analyze():
 
     text_lower = text.lower()
     
-    # Define some global tech skills dictionary to check against
-    all_skills = [
-        "python", "javascript", "html", "css", "react", "node.js", "aws", "docker",
-        "sql", "kubernetes", "typescript", "c++", "java", "tensorflow", "pytorch",
-        "ci/cd", "agile", "statistics", "machine learning", "mongodb", "graphql",
-        "problem solving", "communication", "apis", "git", "linux"
-    ]
+    # Diverse Job Categories & Skill Mapping
+    SKILL_MAP = {
+        "Software Engineer": ["python", "javascript", "react", "html", "css", "node.js", "aws", "docker", "sql", "git", "agile", "c++", "java"],
+        "Data Scientist": ["python", "r", "sql", "machine learning", "statistics", "data analysis", "tensorflow", "pytorch", "pandas", "tableau"],
+        "Teacher": ["lesson planning", "classroom management", "curriculum design", "grading", "special education", "pedagogy", "communication", "student evaluation"],
+        "Nurse": ["patient care", "cpr", "vitals", "emr", "medication administration", "triage", "infection control", "phlebotomy"],
+        "Biologist": ["lab research", "microbiology", "genetics", "data analysis", "pcr", "pipetting", "scientific writing", "field work"],
+        "Accountant": ["bookkeeping", "tax preparation", "financial reporting", "excel", "auditing", "quickbooks", "gaap", "reconciliation"],
+        "Graphic Designer": ["adobe creative suite", "illustrator", "photoshop", "typography", "branding", "ui/ux", "layout design", "figma"],
+        "Marketing Manager": ["seo", "content strategy", "social media", "market research", "campaign management", "google analytics", "b2b", "copywriting"],
+        "Sales Representative": ["crm", "lead generation", "cold calling", "negotiation", "b2b sales", "customer", "closing", "salesforce"],
+        "HR Specialist": ["talent acquisition", "onboarding", "employee relations", "payroll", "benefits", "compliance", "hiring", "interviews"],
+        "Mechanical Engineer": ["cad", "solidworks", "thermodynamics", "manufacturing", "prototyping", "matlab", "fluid mechanics", "project management"],
+        "Lawyer": ["legal research", "litigation", "contract drafting", "negotiation", "case management", "legal writing", "client counseling", "compliance"],
+        "Chef": ["food safety", "menu planning", "inventory management", "culinary techniques", "baking", "line cook", "sanitation", "catering"],
+        "Electrician": ["wiring", "troubleshooting", "blueprints", "safety codes", "installation", "circuitry", "maintenance", "power tools"],
+        "Civil Engineer": ["autocad", "structural design", "project management", "surveying", "construction methods", "estimation", "materials testing"],
+        "Architect": ["revit", "sketchup", "autocad", "building codes", "3d modeling", "project management", "sustainability", "interior design"],
+        "Pharmacist": ["prescription", "counseling", "pharmacology", "inventory", "compliance", "immunization", "medication safety"],
+        "Plumber": ["pipe fitting", "blueprint reading", "water systems", "drainage", "soldering", "maintenance", "troubleshooting", "safety codes"],
+        "Writer": ["copywriting", "proofreading", "seo", "content creation", "ap style", "research", "grammar", "storytelling"],
+        "Psychologist": ["counseling", "assessment", "therapy", "diagnostics", "empathy", "crisis intervention", "record keeping", "treatment planning"]
+    }
+    general_skills = ["communication", "problem solving", "leadership", "teamwork", "time management", "project management", "attention to detail"]
     
-    present = []
-    for s in all_skills:
-        if s in text_lower:
-            present.append(s.title())
-
-    if not present:
-        present = ["Problem Solving"] # Minimum fallback
-    
-    missing = [s.title() for s in all_skills[5:15] if s.title() not in present][:3]
-    suggested = [s.title() for s in all_skills[15:20] if s.title() not in present][:3]
-
     if not roles:
         roles = ['Software Engineer']
         
     target = roles[0] if roles else "Software Engineer"
     
-    # Dynamic ATS Score based on present skills actually found in resume
-    base_score = min(50 + len(present) * 5, 99)
+    # Build list of required skills based on matched target roles
+    required_skills = []
+    for r in roles:
+        mapped = SKILL_MAP.get(r, general_skills)
+        for skill in mapped:
+            if skill not in required_skills:
+                required_skills.append(skill)
+                
+    if not required_skills:
+        required_skills = general_skills
+        
+    present = []
+    for s in required_skills:
+        if s in text_lower:
+            present.append(s.title())
+
+    if not present:
+        present = ["Communication", "Problem Solving"] # Minimum fallback
+    
+    missing = [s.title() for s in required_skills if s.title() not in present][:3]
+    suggested = [s.title() for s in required_skills if s.title() not in present][3:6]
+    if not suggested:
+        suggested = ["Leadership", "Time Management", "Adaptability"]
+
+    # Dynamic ATS Score heavily weighted by satisfying the REQUIRED category target skills
+    match_ratio = len(present) / float(len(required_skills)) if len(required_skills) > 0 else 0.5
+    base_score = int(min(40 + (match_ratio * 60), 99))
     if len(text.strip()) < 20: 
         base_score = 30
         
@@ -136,9 +167,9 @@ def analyze():
         "candidateName": "Analyzed Profile",
         "atsScore": base_score,
         "atsBreakdown": {
-            "formatting": min(base_score + 5, 100),
-            "keywords": min(base_score, 100),
-            "experience": min(base_score + 10, 100),
+            "formatting": min(base_score + 10, 100),
+            "keywords": min(int(match_ratio * 100) + 15, 100),
+            "experience": min(base_score + 5, 100),
             "education": min(base_score + 2, 100)
         },
         "presentSkills": present,
@@ -150,15 +181,18 @@ def analyze():
             f"Add more keywords specifically related to {target}.",
             "Use clear, action-oriented verbs at the beginning of each bullet point."
         ],
-        "summary": f"A profile tailored for {target}. We extracted your file successfully and found {len(present)} targeted keywords actually present.",
+        "summary": f"A profile evaluated dynamically for {target}. We extracted your file successfully and found {len(present)} industry-specific keywords actually present.",
         "extractedText": text.strip()[:600] + ("..." if len(text) > 600 else "")
     }
     
     for r in roles:
+        r_mapped = SKILL_MAP.get(r, general_skills)
+        r_present = sum(1 for s in r_mapped if s in text_lower)
+        r_match = int(min(20 + ((r_present / max(len(r_mapped), 1)) * 80), 100))
         mock_response["jobMatches"].append({
             "role": r,
-            "match": min(base_score - random.randint(-5, 5), 100),
-            "reason": f"Overlap with required skills for {r}.",
+            "match": r_match,
+            "reason": f"Matched {r_present} out of {len(r_mapped)} vital skills for {r}.",
             "level": "Mid-level"
         })
         
